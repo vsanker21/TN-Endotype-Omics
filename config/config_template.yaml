@@ -1,0 +1,123 @@
+# TrigeminalOmics Configuration Template
+# Copy this file to config.yaml and update with your paths and credentials
+
+# Project paths
+project_root: "E:/TN Omics"
+data_dir: "${project_root}/data"
+results_dir: "${project_root}/results"
+logs_dir: "${project_root}/logs"
+
+# Data source paths
+data_sources:
+  # External datasets
+  openneuro_ds005713:
+    path: "${data_dir}/external/openneuro/ds005713"
+    url: "https://openneuro.org/datasets/ds005713"
+    download: true
+  
+  camcan:
+    path: "${data_dir}/external/camcan"
+    url: "https://camcan-archive.mrc-cbu.cam.ac.uk/dataaccess/"
+    download: false  # Requires registration
+  
+  geo:
+    base_path: "${data_dir}/external/geo"
+    datasets:
+      GSE240432:  # Mouse TG single-cell atlas
+        path: "${data_dir}/external/geo/GSE240432"
+        download: true
+      GSE186505:  # Human blood transcriptome TN patients
+        path: "${data_dir}/external/geo/GSE186505"
+        download: true
+  
+  stanford_cohort:
+    path: "${data_dir}/external/stanford"
+    download: false  # Requires data sharing agreement
+
+# Analysis parameters
+analysis:
+  # Aim 1: Cell Atlas
+  cell_atlas:
+    n_components: 50  # PCA components
+    resolution: 0.5  # Leiden clustering resolution
+    deconvolution_method: "CIBERSORTx"  # or "MuSiC"
+    min_cells_per_type: 10
+  
+  # Aim 2: Brain Networks
+  imaging:
+    segmentation_model: "SEVB-Net"
+    dti_method: "DTIFIT"
+    n_streamlines: 100000
+    brain_atlas: "MNI152"  # or "fsaverage"
+    network_metrics:
+      - "clustering_coefficient"
+      - "betweenness_centrality"
+      - "modularity"
+      - "path_length"
+  
+  # Aim 3: Translation
+  translation:
+    pathway_databases:
+      - "KEGG"
+      - "Reactome"
+      - "GO"
+    ortholog_mapping: "Ensembl"  # or "NCBI"
+    min_translation_confidence: 0.7
+  
+  # Aim 4: Digital Twin
+  digital_twin:
+    model_type: "GraphNeuralNetwork"  # or "XGBoost", "LightGBM"
+    n_folds: 5
+    test_size: 0.2
+    random_seed: 42
+    feature_selection: true
+    hyperparameter_tuning: true
+
+# Compute resources
+compute:
+  n_jobs: -1  # -1 for all cores
+  memory_limit: "64GB"
+  gpu: false  # Set to true if GPU available
+  cluster:
+    enabled: false
+    scheduler: "SLURM"  # or "SGE", "PBS"
+
+# Logging
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "${logs_dir}/trigeminalomics.log"
+
+# Output formats
+output:
+  figure_format: "png"  # or "svg", "pdf"
+  figure_dpi: 300
+  save_intermediates: true
+
+# API settings (for Aim 5)
+api:
+  host: "0.0.0.0"
+  port: 8000
+  debug: false
+  database:
+    type: "sqlite"  # or "postgresql"
+    path: "${project_root}/aim5_knowledge_base/database.db"
+
+# External API keys (add your keys)
+api_keys:
+  ensembl: ""  # For ortholog mapping
+  google_cloud: ""  # If using cloud storage
+
+
+
+
+
+
+
+
+
+
+
+
+
+

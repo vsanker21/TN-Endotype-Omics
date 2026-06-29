@@ -1,0 +1,46 @@
+# Analysis Standards - Critical Fixes Applied
+# Date: 2025-12-11
+
+# Feature Selection
+features:
+  use_cleaned_features: true  # Use features_no_circular_reasoning.csv
+  cleaned_features_path: "results/aim4_digital_twin/prepared_data/features_no_circular_reasoning.csv"
+  correlation_threshold: 0.7  # Remove features with correlation > threshold
+
+# Statistical Standards
+statistics:
+  multiple_testing_correction: "fdr_bh"  # Benjamini-Hochberg FDR
+  significance_threshold: 0.05  # Use q-value < 0.05
+  report_p_values: true  # Report both p and q
+  report_q_values: true  # Primary significance metric
+
+# Model Evaluation Metrics (for imbalanced data)
+metrics:
+  primary_metrics:
+    - "balanced_accuracy"
+    - "f1_score_macro"
+    - "precision_recall_auc"
+  secondary_metrics:
+    - "accuracy"
+    - "roc_auc"
+    - "precision_macro"
+    - "recall_macro"
+  per_class_metrics: true
+  confusion_matrix: true
+
+# Effect Sizes
+effect_sizes:
+  calculate: true
+  metrics:
+    - "cohens_d"
+    - "log2fc"
+    - "odds_ratio"
+  confidence_intervals: true
+  ci_level: 0.95
+
+# Reporting Standards
+reporting:
+  include_effect_sizes: true
+  include_confidence_intervals: true
+  include_per_class_metrics: true
+  use_q_values_for_significance: true

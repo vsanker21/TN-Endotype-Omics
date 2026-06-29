@@ -1,0 +1,24 @@
+aim2:
+  aim1_integration:
+    cell_proportions: E:\TN Omics\data\processed\aim2\aim1_cell_proportions.csv
+    subtypes: E:\TN Omics\data\processed\aim2\aim1_molecular_subtypes.csv
+  imaging_subtyping:
+    methods:
+    - kmeans
+    - hierarchical
+    - gmm
+    n_subtypes: 3
+  nerve_segmentation:
+    method: SEVB-Net
+    output_dir: E:\TN Omics\results\aim2\nerve_features
+  network_analysis:
+    atlas: MNI152
+    graph_metrics:
+    - clustering
+    - modularity
+    - betweenness
+    - efficiency
+    parcellation: Schaefer2018_100Parcels_7Networks
+  openeuro_dataset: E:\TN Omics\data\external\openneuro\ds005713
+  processed_data: E:\TN Omics\data\processed\aim2
+  results: E:\TN Omics\results\aim2

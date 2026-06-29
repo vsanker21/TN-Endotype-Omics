@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# Data & large outputs (download separately — see docs/DATA_SETUP.md)
+data/
+results/
+outputs/
+*.nii
+*.nii.gz
+*.h5
+*.h5ad
+
+# Figures (analysis scripts may write optional PNGs locally)
+*.png
+*.pdf
+*.svg
+*.docx
+
+# Secrets
+config/config.yaml
+.env
+*.key
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+logs/
+*.log
