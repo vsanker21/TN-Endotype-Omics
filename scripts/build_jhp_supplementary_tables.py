@@ -230,7 +230,7 @@ def main():
 
     readme = pd.DataFrame([
         ("S1 Participants", "Participant characteristics available in GEO, expression-based sex check, library-composition covariates."),
-        ("S2 IoN-CCI label audit", "PRJNA991739 run-to-condition/tissue mapping from SRA metadata versus the labels used in the original submission."),
+        ("S2 IoN-CCI label audit", "PRJNA991739 run-to-condition/tissue mapping from SRA metadata versus the labels used in an initial version of the analysis."),
         ("S3 IoN-CCI DE TG", "PyDESeq2, IoN-CCI versus sham within trigeminal ganglion (3 vs 3 pooled libraries)."),
         ("S4 IoN-CCI DE Sp5C", "PyDESeq2, IoN-CCI versus sham within spinal trigeminal nucleus caudalis (3 vs 3)."),
         ("S5 IoN-CCI tissue identity", "PyDESeq2, sham TG versus sham Sp5C, used to diagnose the label error."),
