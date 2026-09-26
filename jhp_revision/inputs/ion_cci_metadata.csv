@@ -1,0 +1,13 @@
+sample_id,condition,tissue
+SRR25158547,sham,tg
+SRR25158548,sham,tg
+SRR25158549,sham,tg
+SRR25158550,sham,tg
+SRR25158551,sham,sp5c
+SRR25158552,sham,sp5c
+SRR25158553,ion_cci,tg
+SRR25158554,ion_cci,tg
+SRR25158555,sham,sp5c
+SRR25158556,sham,sp5c
+SRR25158557,ion_cci,sp5c
+SRR25158558,ion_cci,sp5c

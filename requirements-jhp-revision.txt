@@ -1,0 +1,11 @@
+numpy==2.2.6
+pandas==2.2.3
+scipy==1.15.2
+scikit-learn==1.7.2
+statsmodels==0.14.6
+pydeseq2==0.5.4
+gseapy==1.1.4
+matplotlib==3.10.8
+openpyxl==3.1.5
+requests==2.32.5
+mygene==3.2.2
