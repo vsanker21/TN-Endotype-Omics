@@ -6,7 +6,9 @@ Reads results/jhp_revision/*; writes results/jhp_revision/figures/*.png (600 dpi
 from __future__ import annotations
 
 import json
+import re
 import sys
+import textwrap
 from pathlib import Path
 
 import matplotlib
@@ -51,6 +53,22 @@ def fmt_p(p: float) -> str:
     return f"P = {p:.3f}" if p < 0.1 else f"P = {p:.2f}"
 
 
+PROPER = {"Schwann", "Golgi", "Toll", "Wnt", "Notch", "Hedgehog", "Rho", "Ras", "Fc"}
+
+
+def pretty_term(term: str) -> str:
+    """Enrichr term in sentence case, without the Reactome/GO identifier."""
+    term = re.split(r" R-HSA| \(GO:", term)[0]
+    words = []
+    for i, w in enumerate(term.split(" ")):
+        segs = re.split(r"([/-])", w)
+        for j, s in enumerate(segs):
+            if (i or j) and s not in PROPER and re.fullmatch(r"[A-Z][a-z]+", s):
+                segs[j] = s.lower()
+        words.append("".join(segs))
+    return " ".join(words)
+
+
 def save(fig, name):
     fig.savefig(FIG / f"{name}.png", bbox_inches="tight", facecolor="white")
     plt.close(fig)
@@ -70,7 +88,9 @@ def figure1():
         d = pcs[pcs.subtype == st]
         ax.scatter(d.PC1, d.PC2, s=30, color=col, edgecolor="black", lw=0.4, label=f"TN partition {st} (n={len(d)})", zorder=3)
         for sid, r in d.iterrows():
-            ax.annotate(sid, (r.PC1, r.PC2), fontsize=5, xytext=(2, 2), textcoords="offset points")
+            left = sid == "TN-15"
+            ax.annotate(sid, (r.PC1, r.PC2), fontsize=5, xytext=(-2 if left else 2, 2), textcoords="offset points",
+                        ha="right" if left else "left")
     ax.axhline(0, color="#dddddd", lw=0.5, zorder=0)
     ax.axvline(0, color="#dddddd", lw=0.5, zorder=0)
     ax.set_xlabel(f"PC1 ({ve[0]*100:.1f}% of TN variance)")
@@ -85,16 +105,19 @@ def figure1():
     bins = np.linspace(0, 0.6, 41)
     ax.hist(n2, bins=bins, color="#BBBBBB", edgecolor="white", lw=0.3, label="Null, k = 2")
     ax.hist(nb, bins=bins, histtype="step", color="black", lw=0.8, label="Null, best of k = 2-4")
-    obs = 0.2237
+    ks = pd.read_csv(R / "B2_k_selection_metrics_with_null.csv").set_index("k")
+    obs = ks.loc[2, "silhouette"]
     ax.axvline(obs, color=C_S1, lw=1.4)
-    ax.text(0.98, 0.62, f"Observed k = 2 silhouette = {obs:.3f}\n"
-            f"{fmt_p(S['B2_p_best_silhouette'])} vs best-k null\nSigClust cluster index {fmt_p(S['B2_sigclust_p_cluster_index'])}",
-            transform=ax.transAxes, fontsize=5.8, va="top", ha="right", color=C_S1,
-            bbox=dict(facecolor="white", edgecolor="none", alpha=0.85, pad=1))
+    ax.set_ylim(0, ax.get_ylim()[1] * 1.45)
+    ax.text(obs + 0.012, 0.97, f"Observed k = 2 silhouette = {obs:.3f}\n"
+            f"{fmt_p(ks.loc[2, 'silhouette_null_p'])} vs k = 2 null\n"
+            f"{fmt_p(S['B2_p_best_silhouette'])} vs best-of-k null\n"
+            f"SigClust cluster index {fmt_p(S['B2_sigclust_p_cluster_index'])}",
+            transform=ax.get_xaxis_transform(), fontsize=5.6, va="top", ha="left", color=C_S1)
     ax.set_xlabel("Average silhouette width")
     ax.set_ylabel("Null datasets (of 2,000)")
     ax.set_title("No-cluster (single Gaussian) null")
-    ax.legend(frameon=False, loc="upper right")
+    ax.legend(frameon=False, loc="upper right", bbox_to_anchor=(1.0, 0.7))
     panel(ax, "B", x=-0.24)
 
     ax = fig.add_subplot(gs[1, 0])
@@ -175,8 +198,8 @@ def figure2():
 
     ax = fig.add_subplot(gs[1, 1])
     v = pd.read_csv(R / "B10_partition_after_globin_adjustment.csv")
-    labels = ["All genes,\nz-scored FPKM", "Globin genes removed,\nrenormalised, z-scored", "Globin genes removed,\nlog2, expressed genes",
-              "Residualised on\nglobin fraction"]
+    labels = ["Original: all genes,\nz-scored FPKM", "14 globin/erythroid genes\nremoved, z-scored TPM",
+              "14 globin/erythroid genes\nremoved, log2 TPM", "log2 FPKM residualised\non globin fraction"]
     vals = [1.0] + v.ARI_vs_submitted.tolist()
     sizes = ["6/4"] + v.sizes.tolist()
     yy = np.arange(4)[::-1]
@@ -186,7 +209,7 @@ def figure2():
     ax.set_yticks(yy)
     ax.set_yticklabels(labels, fontsize=5.8)
     ax.set_xlim(0, 1.3)
-    ax.set_xlabel("Agreement with k-means partition (ARI)")
+    ax.set_xlabel("Agreement with original partition (ARI)")
     ax.set_title("Partition after globin adjustment")
     panel(ax, "C", x=-0.62)
     save(fig, "Figure2_globin_composition")
@@ -226,7 +249,7 @@ def figure3():
         r = mres.loc[name]
         ax.hist(arr, bins=40, color="#BBBBBB", edgecolor="white", lw=0.3)
         ax.axvline(abs(r.cohens_d_injury_oriented_log2), color=C_S1, lw=1.3)
-        ax.set_title(f"{lab.replace('Initial ', '')}\n({int(r.n_expressed_genes)} blood-expressed genes)", fontsize=6.3)
+        ax.set_title(f"{lab}\n({int(r.n_expressed_genes)} blood-expressed genes)", fontsize=6.3)
         ax.set_xlabel("|Cohen's d|, matched random sets")
         ax.text(0.97, 0.95, f"observed |d| = {abs(r.cohens_d_injury_oriented_log2):.2f}\n{fmt_p(r.random_geneset_p)}",
                 transform=ax.transAxes, ha="right", va="top", fontsize=5.6)
@@ -317,13 +340,13 @@ def figure4():
     for (t, d) in [("tg", "up"), ("tg", "down"), ("sp5c", "up"), ("sp5c", "down")]:
         sub_ = ora[(ora.tissue == t) & (ora.direction == d)].head(4)
         for _, r in sub_.iterrows():
-            rows.append((f"{'TG' if t=='tg' else 'Sp5C'} {d}", r.term.split(" R-HSA")[0], -np.log10(r.p_adj), r.overlap, t))
+            rows.append((f"{'TG' if t=='tg' else 'Sp5C'} {d}", pretty_term(r.term), -np.log10(r.p_adj), r.overlap, t))
     rows = rows[::-1]
     for i, (grp, term, q, ov, t) in enumerate(rows):
         ax.scatter(q, i, s=8 + ov * 0.6, color=C_TG if t == "tg" else C_SP, edgecolor="black", lw=0.3,
                    marker="^" if "up" in grp else "v")
     ax.set_yticks(range(len(rows)))
-    ax.set_yticklabels([f"{g}: {t[:58]}" for g, t, *_ in rows], fontsize=5.5)
+    ax.set_yticklabels([f"{g}: {t}" for g, t, *_ in rows], fontsize=5.5)
     ax.set_xlabel("−log10 adjusted P (Reactome 2022 over-representation)")
     ax.set_title("Top pathways per tissue and direction (corrected labels)", fontsize=6.5)
     ax.spines["left"].set_visible(False)
@@ -421,13 +444,27 @@ def supp_figures():
     save(fig, "FigureS1_k_selection_null")
     # S2 sensitivity
     sv = pd.read_csv(R / "B3_sensitivity_variants.csv")
+    sv = sv[~sv.variant.str.startswith("original")].reset_index(drop=True)
+    seed_lab = {"random seed (200 seeds, n_init=1)": "Random seeds, single k-means start (200 seeds; mean ARI)",
+                "random seed (50 seeds, n_init=20)": "Random seeds, 20 k-means starts (50 seeds; mean ARI)"}
+    def variant_label(v):
+        if v in seed_lab:
+            return seed_lab[v]
+        for a, b in [("z(log2 FPKM+1)", "z-scored log2(FPKM + 1)"), ("log2 FPKM+1 unscaled", "log2(FPKM + 1), unscaled"),
+                     ("z(FPKM)", "z-scored FPKM"), ("FPKM>=1 in >=5 samples", "FPKM ≥ 1 in ≥ 5 samples"),
+                     ("Ward", "Ward hierarchical clustering"),
+                     ("average-linkage correlation", "average-linkage clustering, correlation distance")]:
+            v = v.replace(a, b)
+        return v
+
+    sv["label"] = [variant_label(v) for v in sv.variant]
     loo = pd.read_csv(R / "B3_leave_one_out.csv")
     fig, axs = plt.subplots(1, 2, figsize=(6.3, 3.4), gridspec_kw=dict(width_ratios=[2.2, 1]))
     yy = np.arange(len(sv))[::-1]
     axs[0].barh(yy, sv.ARI_vs_original, color=["black" if a > 0.999 else C_S1 for a in sv.ARI_vs_original])
     axs[0].set_yticks(yy)
-    axs[0].set_yticklabels(sv.variant, fontsize=5.2)
-    axs[0].set_xlabel("ARI with k-means partition")
+    axs[0].set_yticklabels(sv.label, fontsize=5.2)
+    axs[0].set_xlabel("ARI with original partition")
     axs[0].set_title("Analytical sensitivity")
     axs[1].bar(range(10), loo.ARI_vs_original, color="black")
     axs[1].set_xticks(range(10))
@@ -446,9 +483,13 @@ def supp_figures():
     axs[0].set_xlabel("log2 fold change (TN vs control)")
     axs[0].set_ylabel("−log10 P (moderated t)")
     axs[0].set_title("TN vs control: 0 genes at FDR < 0.05")
-    axs[1].barh(range(len(top)), top.NES, color=[C_S1 if n > 0 else C_S0 for n in top.NES])
+    axs[1].barh(range(len(top)), top.NES, color=[C_S1 if q < 0.05 else "#F2B48C" for q in top.fdr])
     axs[1].set_yticks(range(len(top)))
-    axs[1].set_yticklabels([f"{t.split(' R-HSA')[0].split(' (GO')[0][:48]} (q={q:.3f})" for t, q in zip(top.Term, top.fdr)], fontsize=5.2)
+    axs[1].set_yticklabels([textwrap.fill(f"{pretty_term(t)} (q\u00a0=\u00a0{q:.3f})", 52) for t, q in zip(top.Term, top.fdr)],
+                           fontsize=5.0)
+    axs[1].set_xlim(0, 3.4)
+    axs[1].legend(handles=[Patch(color=C_S1, label="FDR < 0.05"), Patch(color="#F2B48C", label="FDR ≥ 0.05")],
+                  frameon=False, loc="lower right", fontsize=5.5)
     axs[1].set_xlabel("Normalised enrichment score")
     axs[1].set_title("Preranked GSEA (moderated t)")
     fig.tight_layout()
