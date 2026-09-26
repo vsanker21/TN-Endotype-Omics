@@ -19,6 +19,28 @@ def r(name, **kw):
     return pd.read_csv(RES / name, **kw)
 
 
+RELABEL = [
+    ("(submitted pipeline otherwise)", "(original pipeline otherwise)"),
+    ("(submitted pipeline)", "(original pipeline)"),
+    ("n_genes_as_submitted", "n_genes_as_scored"),
+    ("submitted_abs_cohens_d", "initial_abs_cohens_d"),
+    ("submitted_cohens_d", "initial_cohens_d"),
+    ("ARI_vs_submitted", "ARI_vs_kmeans_partition"),
+    ("submitted_exact_", "initial_exact_"),
+    ("legacy_", "initial_"),
+    ("revised_", "corrected_"),
+]
+
+
+def relabel(v):
+    """Neutral names for the initial (mislabelled-contrast) and corrected module variants."""
+    if not isinstance(v, str):
+        return v
+    for old, new in RELABEL:
+        v = v.replace(old, new)
+    return v
+
+
 def stack(blocks):
     """Stack several tables vertically in one sheet, each preceded by a title row."""
     parts = []
@@ -118,10 +140,10 @@ def main():
     defs = json.loads((RES / "A4_revised_module_definitions.json").read_text())
     defs_df = pd.DataFrame([{"module": k, **({"definition": v} if isinstance(v, str) else v)} for k, v in defs.items()])
     sheets["S7 Module gene sets"] = stack([
-        ("Table S7a. Ortholog coverage and whole-blood expression of submitted (legacy) and revised modules.",
+        ("Table S7a. Ortholog coverage and whole-blood expression of initial and corrected modules.",
          r("B4_module_ortholog_blood_expression.csv")),
-        ("Table S7b. Revised module definitions.", defs_df.astype(str)),
-        ("Table S7c. Revised module gene lists (human one-to-one orthologs).", r("A4_revised_module_gene_sets.csv"))])
+        ("Table S7b. Corrected module definitions.", defs_df.astype(str)),
+        ("Table S7c. Corrected module gene lists (human one-to-one orthologs).", r("A4_revised_module_gene_sets.csv"))])
     sheets["S8 Clusterability"] = stack([
         ("Table S8a. k-selection metrics for k=2-4 with single-Gaussian null reference (1,000 null datasets).",
          r("B2_k_selection_metrics_with_null.csv")),
@@ -133,9 +155,9 @@ def main():
         ("Table S9c. Analytical sensitivity variants.", r("B3_sensitivity_variants.csv")),
         ("Table S9d. Consensus matrix (subsampling).", r("B3_consensus_matrix_subsampling.csv").rename(columns={"Unnamed: 0": "sample"}))])
     sheets["S10 Circularity nulls"] = stack([
-        ("Table S10a. Reproduction of submitted module effect sizes.", r("B4_legacy_effect_reproduction.csv")),
-        ("Table S10b. Submitted gene sets (as scored) under the full-pipeline null.", r("B4b_submitted_gene_sets_full_pipeline_null.csv")),
-        ("Table S10c. Submitted gene sets (as scored) against 10,000 expression-matched random gene sets.",
+        ("Table S10a. Reproduction of initial module effect sizes.", r("B4_legacy_effect_reproduction.csv")),
+        ("Table S10b. Initial gene sets (as originally scored) under the full-pipeline null.", r("B4b_submitted_gene_sets_full_pipeline_null.csv")),
+        ("Table S10c. Initial gene sets (as originally scored) against 10,000 expression-matched random gene sets.",
          r("B4c_submitted_gene_sets_matched_random_null.csv")),
         ("Table S10d. Blood-expressed module genes: exact permutation, full-pipeline null and matched random gene-set null.",
          r("B4_module_effects_circularity_nulls.csv"))]
@@ -231,6 +253,7 @@ def main():
         readme.to_excel(xw, sheet_name="README", index=False)
         for name, df in sheets.items():
             stacked = isinstance(df.columns, pd.RangeIndex)
+            df = df.rename(columns=relabel).map(relabel)
             df.to_excel(xw, sheet_name=name[:31], index=False, header=not stacked)
 
     wb = load_workbook(OUT)
