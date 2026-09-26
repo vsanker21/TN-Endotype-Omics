@@ -20,20 +20,25 @@ def r(name, **kw):
 
 
 RELABEL = [
-    ("(submitted pipeline otherwise)", "(original pipeline otherwise)"),
-    ("(submitted pipeline)", "(original pipeline)"),
+    ("(submitted pipeline otherwise)", "(reference pipeline otherwise)"),
+    ("(submitted pipeline)", "(reference pipeline)"),
     ("n_genes_as_submitted", "n_genes_as_scored"),
-    ("submitted_abs_cohens_d", "initial_abs_cohens_d"),
-    ("submitted_cohens_d", "initial_cohens_d"),
+    ("submitted_abs_cohens_d", "exploratory_abs_cohens_d"),
+    ("submitted_cohens_d", "exploratory_cohens_d"),
     ("ARI_vs_submitted", "ARI_vs_kmeans_partition"),
-    ("submitted_exact_", "initial_exact_"),
-    ("legacy_", "initial_"),
-    ("revised_", "corrected_"),
+    ("ARI_vs_original", "ARI_vs_reference"),
+    ("original: z(FPKM)", "reference: z(FPKM)"),
+    ("submitted_exact_", "exploratory_exact_"),
+    ("legacy_", "exploratory_"),
+    ("revised_", "verified_"),
+    ("tissue_mislabeled", "tissue_discordant_with_SRA"),
+    ("condition_mislabeled", "condition_discordant_with_SRA"),
+    ("implementation in scripts/run_jhp_revision_analyses.py", "implementation in the analysis scripts of the code repository"),
 ]
 
 
 def relabel(v):
-    """Neutral names for the initial (mislabelled-contrast) and corrected module variants."""
+    """Neutral names for the exploratory (label-discordant contrast) and label-verified module variants."""
     if not isinstance(v, str):
         return v
     for old, new in RELABEL:
@@ -140,10 +145,10 @@ def main():
     defs = json.loads((RES / "A4_revised_module_definitions.json").read_text())
     defs_df = pd.DataFrame([{"module": k, **({"definition": v} if isinstance(v, str) else v)} for k, v in defs.items()])
     sheets["S7 Module gene sets"] = stack([
-        ("Table S7a. Ortholog coverage and whole-blood expression of initial and corrected modules.",
+        ("Table S7a. Ortholog coverage and whole-blood expression of exploratory gene sets and label-verified modules.",
          r("B4_module_ortholog_blood_expression.csv")),
-        ("Table S7b. Corrected module definitions.", defs_df.astype(str)),
-        ("Table S7c. Corrected module gene lists (human one-to-one orthologs).", r("A4_revised_module_gene_sets.csv"))])
+        ("Table S7b. Label-verified module definitions.", defs_df.astype(str)),
+        ("Table S7c. Label-verified module gene lists (human one-to-one orthologs).", r("A4_revised_module_gene_sets.csv"))])
     sheets["S8 Clusterability"] = stack([
         ("Table S8a. k-selection metrics for k=2-4 with single-Gaussian null reference (1,000 null datasets).",
          r("B2_k_selection_metrics_with_null.csv")),
@@ -155,13 +160,13 @@ def main():
         ("Table S9c. Analytical sensitivity variants.", r("B3_sensitivity_variants.csv")),
         ("Table S9d. Consensus matrix (subsampling).", r("B3_consensus_matrix_subsampling.csv").rename(columns={"Unnamed: 0": "sample"}))])
     sheets["S10 Circularity nulls"] = stack([
-        ("Table S10a. Reproduction of initial module effect sizes.", r("B4_legacy_effect_reproduction.csv")),
-        ("Table S10b. Initial gene sets (as originally scored) under the full-pipeline null.", r("B4b_submitted_gene_sets_full_pipeline_null.csv")),
-        ("Table S10c. Initial gene sets (as originally scored) against 10,000 expression-matched random gene sets.",
+        ("Table S10a. Reproduction of exploratory gene-set effect sizes.", r("B4_legacy_effect_reproduction.csv")),
+        ("Table S10b. Exploratory gene sets (exploratory scoring) under the full-pipeline null.", r("B4b_submitted_gene_sets_full_pipeline_null.csv")),
+        ("Table S10c. Exploratory gene sets (exploratory scoring) against 10,000 expression-matched random gene sets.",
          r("B4c_submitted_gene_sets_matched_random_null.csv")),
         ("Table S10d. Blood-expressed module genes: exact permutation, full-pipeline null and matched random gene-set null.",
          r("B4_module_effects_circularity_nulls.csv"))]
-        + ([("Table S10e. Sp5C-down ECM/Schwann module (added after label correction; analysed separately from the "
+        + ([("Table S10e. Sp5C-down ECM/Schwann module (added after label verification; analysed separately from the "
              "pre-specified gene sets): definition, blood expression, partition effect with full-pipeline and random "
              "gene-set nulls, globin depletion, and TN versus control mean and dispersion.",
              r("E_sp5c_ecm/E3_sp5c_ecm_tests.csv").rename(columns={"Unnamed: 0": "statistic"})),
@@ -230,10 +235,10 @@ def main():
 
     readme = pd.DataFrame([
         ("S1 Participants", "Participant characteristics available in GEO, expression-based sex check, library-composition covariates."),
-        ("S2 IoN-CCI label audit", "PRJNA991739 run-to-condition/tissue mapping from SRA metadata versus the labels used in an initial version of the analysis."),
+        ("S2 IoN-CCI label audit", "PRJNA991739 run-to-condition/tissue mapping from SRA metadata versus the labels used in the exploratory analysis."),
         ("S3 IoN-CCI DE TG", "PyDESeq2, IoN-CCI versus sham within trigeminal ganglion (3 vs 3 pooled libraries)."),
         ("S4 IoN-CCI DE Sp5C", "PyDESeq2, IoN-CCI versus sham within spinal trigeminal nucleus caudalis (3 vs 3)."),
-        ("S5 IoN-CCI tissue identity", "PyDESeq2, sham TG versus sham Sp5C, used to diagnose the label error."),
+        ("S5 IoN-CCI tissue identity", "PyDESeq2, sham TG versus sham Sp5C, used to diagnose the label discordance."),
         ("S6 IoN-CCI Reactome ORA", "Reactome 2022 over-representation by tissue and direction (padj < 0.05 genes)."),
         ("S7 Module gene sets", "Module definitions, gene lists, ortholog counts and blood expression."),
         ("S8 Clusterability", "Elbow, silhouette, Calinski-Harabasz with null reference; gap statistic including k = 1."),
