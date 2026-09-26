@@ -198,7 +198,7 @@ def figure2():
 
     ax = fig.add_subplot(gs[1, 1])
     v = pd.read_csv(R / "B10_partition_after_globin_adjustment.csv")
-    labels = ["Original: all genes,\nz-scored FPKM", "14 globin/erythroid genes\nremoved, z-scored TPM",
+    labels = ["Reference: all genes,\nz-scored FPKM", "14 globin/erythroid genes\nremoved, z-scored TPM",
               "14 globin/erythroid genes\nremoved, log2 TPM", "log2 FPKM residualised\non globin fraction"]
     vals = [1.0] + v.ARI_vs_submitted.tolist()
     sizes = ["6/4"] + v.sizes.tolist()
@@ -209,7 +209,7 @@ def figure2():
     ax.set_yticks(yy)
     ax.set_yticklabels(labels, fontsize=5.8)
     ax.set_xlim(0, 1.3)
-    ax.set_xlabel("Agreement with original partition (ARI)")
+    ax.set_xlabel("Agreement with reference partition (ARI)")
     ax.set_title("Partition after globin adjustment")
     panel(ax, "C", x=-0.62)
     save(fig, "Figure2_globin_composition")
@@ -221,8 +221,8 @@ def figure3():
     gs = GridSpec(3, 6, figure=fig, wspace=1.0, hspace=0.85)
     sub = pd.read_csv(R / "B4b_submitted_gene_sets_full_pipeline_null.csv")
     rnd = pd.read_csv(R / "B4c_submitted_gene_sets_matched_random_null.csv").set_index("module")
-    names = {"peripheral_ecm_schwann": "Initial 'peripheral ECM/Schwann'", "central_synaptic": "Initial 'central synaptic'",
-             "ntrk_signaling": "Initial 'NTRK signalling'"}
+    names = {"peripheral_ecm_schwann": "'Peripheral ECM/Schwann' set", "central_synaptic": "'Central synaptic' set",
+             "ntrk_signaling": "'NTRK signalling' set"}
     for i, (key, lab) in enumerate(names.items()):
         ax = fig.add_subplot(gs[0, 2 * i:2 * i + 2])
         arr = ND[f"fullnull_submitted_exact_{key}"]
@@ -289,19 +289,19 @@ def figure4():
     cc = {"injury": "black", "sham": "white"}
     for i, s in enumerate(order):
         a = audit.loc[s]
-        for j, (col, key) in enumerate([(tc[a.tissue], "t"), (cc[a.condition], "c"), (tc[a.legacy_tissue], "lt"), (cc[a.legacy_condition], "lc")]):
-            ax.add_patch(plt.Rectangle((-5.2 + j * 1.05, i - 0.5), 0.95, 1, facecolor=col, edgecolor="#444444", lw=0.3, clip_on=False))
+        for j, col in enumerate([tc[a.tissue], cc[a.condition]]):
+            ax.add_patch(plt.Rectangle((-3.1 + j * 1.05, i - 0.5), 0.95, 1, facecolor=col, edgecolor="#444444", lw=0.3, clip_on=False))
         if a.tissue_mislabeled or a.condition_mislabeled:
-            ax.text(-6.0, i, "×", color="red", fontsize=8, ha="center", va="center", clip_on=False, fontweight="bold")
-    for j, lab in enumerate(["SRA tissue", "SRA group", "Initial tissue", "Initial group"]):
-        ax.text(-5.2 + j * 1.05 + 0.45, -0.9, lab, rotation=90, fontsize=5, ha="center", va="bottom", clip_on=False)
+            ax.text(-3.9, i, "×", color="red", fontsize=8, ha="center", va="center", clip_on=False, fontweight="bold")
+    for j, lab in enumerate(["SRA tissue", "SRA group"]):
+        ax.text(-3.1 + j * 1.05 + 0.45, -0.9, lab, rotation=90, fontsize=5, ha="center", va="bottom", clip_on=False)
     cb = fig.colorbar(im, ax=ax, fraction=0.045, pad=0.03)
     cb.set_label("Spearman ρ (log2 counts)", fontsize=5.8)
     cb.ax.tick_params(labelsize=5)
     ax.legend(handles=[Patch(facecolor=C_TG, label="TG"), Patch(facecolor=C_SP, label="Sp5C"),
                        Patch(facecolor="black", label="IoN-CCI"), Patch(facecolor="white", edgecolor="#444444", label="Sham")],
               frameon=False, fontsize=5.2, loc="upper center", bbox_to_anchor=(0.5, -0.2), ncol=4)
-    ax.set_title("PRJNA991739: samples cluster by SRA tissue;\n6/12 initial labels incorrect (×)", fontsize=6.5, x=0.6)
+    ax.set_title("PRJNA991739: libraries cluster\nby SRA-recorded tissue", fontsize=6.5, x=0.6)
     panel(ax, "A", x=-0.62)
 
     ax = fig.add_subplot(gs[0, 3])
@@ -312,23 +312,23 @@ def figure4():
     ax.set_xticks([0, 1, 2.5, 3.5])
     ax.set_xticklabels(["TG up", "TG down", "Sp5C up", "Sp5C down"], rotation=45, ha="right")
     ax.set_ylabel("Genes, IoN-CCI vs sham\n(PyDESeq2, padj < 0.05; 3 vs 3)")
-    ax.set_title("Corrected per-tissue DE", fontsize=6.5)
+    ax.set_title("Per-tissue DE (SRA labels)", fontsize=6.5)
     panel(ax, "B", x=-0.75)
 
     leg = pd.read_csv(ION / "de_ion_cci_vs_sham_tg.csv").set_index("gene").dropna(subset=["log2FoldChange"])
     tis = pd.read_csv(R / "A2_ion_cci_deseq2_sham_TG_vs_Sp5C_tissue_identity.csv", index_col=0).dropna(subset=["log2FoldChange"])
     inj = pd.read_csv(R / "A2_ion_cci_deseq2_tg_injury_vs_sham.csv", index_col=0).dropna(subset=["log2FoldChange"])
-    for k, (ref, lab, letter) in enumerate([(tis, "True tissue effect: TG vs Sp5C (sham), log2FC", "C"),
-                                           (inj, "True injury effect: TG IoN-CCI vs sham, log2FC", None)]):
+    for k, (ref, lab, letter) in enumerate([(tis, "TG vs Sp5C (sham), log2FC", "C"),
+                                           (inj, "TG IoN-CCI vs sham, log2FC", None)]):
         ax = fig.add_subplot(gs[1, 2 * k:2 * k + 2])
         cm = leg.index.intersection(ref.index)
         x, yv = leg.loc[cm, "log2FoldChange"].clip(-12, 12), ref.loc[cm, "log2FoldChange"].clip(-12, 12)
         ax.hexbin(x, yv, gridsize=45, bins="log", cmap="Greys", mincnt=1, linewidths=0)
         rho = stats.spearmanr(x, yv).correlation
-        ax.set_title(f"Mislabelled 'IoN-CCI' effect vs {'tissue identity' if k == 0 else 'true TG injury effect'}\n"
+        ax.set_title(f"Label-discordant contrast vs {'tissue difference' if k == 0 else 'TG injury effect (SRA labels)'}\n"
                      f"Spearman ρ = {rho:.2f} ({len(cm):,} genes)", fontsize=6.3)
-        ax.set_xlabel("'IoN-CCI vs sham' log2FC (initial, mislabelled samples)")
-        ax.set_ylabel(lab.split(": ")[1], fontsize=6)
+        ax.set_xlabel("'IoN-CCI vs sham' log2FC, labels discordant with SRA")
+        ax.set_ylabel(lab, fontsize=6)
         ax.axhline(0, color="#cccccc", lw=0.4)
         ax.axvline(0, color="#cccccc", lw=0.4)
         if letter:
@@ -348,7 +348,7 @@ def figure4():
     ax.set_yticks(range(len(rows)))
     ax.set_yticklabels([f"{g}: {t}" for g, t, *_ in rows], fontsize=5.5)
     ax.set_xlabel("−log10 adjusted P (Reactome 2022 over-representation)")
-    ax.set_title("Top pathways per tissue and direction (corrected labels)", fontsize=6.5)
+    ax.set_title("Top pathways per tissue and direction (SRA labels)", fontsize=6.5)
     ax.spines["left"].set_visible(False)
     panel(ax, "D", x=-1.35)
     save(fig, "Figure4_ion_cci_corrected")
@@ -390,10 +390,10 @@ def figure5():
     keep = ["legacy_peripheral_ecm_schwann", "legacy_central_synaptic", "legacy_ntrk_signaling",
             "revised_peripheral_ecm_schwann_pathway", "revised_central_synaptic_pathway", "revised_ntrk_signaling_pathway",
             "revised_central_synaptic_TGdown_pathway", "revised_ntrk_signaling_TGdown_pathway"]
-    lab = {"legacy_peripheral_ecm_schwann": "Initial peripheral ECM/Schwann", "legacy_central_synaptic": "Initial central synaptic",
-           "legacy_ntrk_signaling": "Initial NTRK", "revised_peripheral_ecm_schwann_pathway": "Corrected TG-up ECM/Schwann terms",
-           "revised_central_synaptic_pathway": "Corrected Sp5C-down synaptic terms", "revised_ntrk_signaling_pathway": "Corrected Sp5C-down NTRK terms",
-           "revised_central_synaptic_TGdown_pathway": "Corrected TG-down synaptic terms", "revised_ntrk_signaling_TGdown_pathway": "Corrected TG-down NTRK terms"}
+    lab = {"legacy_peripheral_ecm_schwann": "'Peripheral ECM/Schwann' set", "legacy_central_synaptic": "'Central synaptic' set",
+           "legacy_ntrk_signaling": "'NTRK signalling' set", "revised_peripheral_ecm_schwann_pathway": "TG-up ECM/Schwann terms",
+           "revised_central_synaptic_pathway": "Sp5C-down synaptic terms", "revised_ntrk_signaling_pathway": "Sp5C-down NTRK terms",
+           "revised_central_synaptic_TGdown_pathway": "TG-down synaptic terms", "revised_ntrk_signaling_TGdown_pathway": "TG-down NTRK terms"}
     cov = cov.set_index("module").loc[keep]
     y = np.arange(len(cov))[::-1]
     ax.barh(y, cov.n_human_orthologs, color="#E5E5E5", edgecolor="black", lw=0.3, label="Human orthologs")
@@ -464,7 +464,7 @@ def supp_figures():
     axs[0].barh(yy, sv.ARI_vs_original, color=["black" if a > 0.999 else C_S1 for a in sv.ARI_vs_original])
     axs[0].set_yticks(yy)
     axs[0].set_yticklabels(sv.label, fontsize=5.2)
-    axs[0].set_xlabel("ARI with original partition")
+    axs[0].set_xlabel("ARI with reference partition")
     axs[0].set_title("Analytical sensitivity")
     axs[1].bar(range(10), loo.ARI_vs_original, color="black")
     axs[1].set_xticks(range(10))
@@ -504,8 +504,9 @@ def supp_figures():
     axs[0].axhline(1, ls="--", color="#999999", lw=0.5)
     axs[0].axhline(-1, ls="--", color="#999999", lw=0.5)
     axs[0].set_xlabel("log10 mean FPKM")
-    axs[0].set_ylabel("Initial log2FC (ratio of FPKM means)")
-    axs[0].set_title(f"Initial 247 genes: {int(((sig.mean_subtype<1)&(sig.mean_other<1)).sum())} with mean FPKM < 1")
+    axs[0].set_ylabel("log2 ratio of group mean FPKM")
+    axs[0].set_title(f"{len(sig)} genes with |log2 FPKM ratio| > 1: "
+                     f"{int(((sig.mean_subtype<1)&(sig.mean_other<1)).sum())} with mean FPKM < 1")
     axs[1].scatter(mod.AveExpr, mod.log2FC, s=1.5, color=C_CTRL, alpha=0.5, lw=0)
     s2 = mod[mod.p_adj < 0.05]
     axs[1].scatter(s2.AveExpr, s2.log2FC, s=1.5, color=C_S1, alpha=0.5, lw=0)
